@@ -175,8 +175,8 @@ stable across re-renders, and restore still works for anything ever mapped.
 | Authorization header | on | |
 | Cookies | on | `keep_cookies` for `lang`-style values |
 | JWTs | on | synthetic re-issue |
-| Sensitive headers by name | on | `X-Api-Key`, `*-Token`, `*-Secret`, `*Session*`, `*Signature*` … |
-| Sensitive fields by key | on | password, email, name, ssn, card, account, company, sub, state, code … |
+| Sensitive headers by name | on | `X-Api-Key`, `*-Token`, `*-Secret`, `*Session*`, `*Signature*` … (`*Tokens*`, plural, is a count) |
+| Sensitive fields by key | on | password, email, name, ssn, card, account, company, sub, state, code … (`*tokens*`, plural, is a count) |
 | Known secret formats | on | |
 | UUIDs | on | often session/user ids (decided) |
 | Hex ≥ 32 | on | session ids, hashes |
@@ -213,9 +213,8 @@ exercise these keys, so the engine must understand them anyway:
 in v1, surfaced in the UI in a later milestone. Candidates for that later milestone, in rough order
 of value: editable keep/sensitive lists; per-item overrides ("don't map this host in *this* item");
 right-click a highlighted replacement → "keep original" / "always keep this key"; custom secret
-patterns with a live test box; placeholder label overrides; numeric values under `*_tokens` keys
-left alone (usage counters are not secrets). None of these change the engine's contract, which is
-the point of settling the vocabulary now.
+patterns with a live test box; placeholder label overrides. None of these change the engine's
+contract, which is the point of settling the vocabulary now.
 
 ## Restore rules and edge cases (Decided)
 
@@ -446,11 +445,19 @@ The map JSON the extension stores in `extensionData()` and writes on Export is
   `structured/crlf-line-endings`.
 - 2026-10-22 — **Highlights mapped to document offsets.** Swing stores CRLF as LF, so engine span
   offsets drifted one character per line; `HighlightPane` now converts them. Test:
-  `HighlightPaneTest`.
+  `HighlightPaneTest`. Verified live in Burp Pro 2026-10-22.
 - 2026-10-22 — **IPv4 skips product versions.** Found in the first live load: `Chrome/154.0.0.0` in
   every Chromium User-Agent became `Chrome/192.0.2.1`. The free-text IPv4 replacer now leaves a
   dotted quad that directly follows a product token and slash (`Detectors.followsProductToken`).
   Host headers, URL hosts and path segments are unaffected. Fixture:
-  `detectors/ipv4-not-product-version`.
+  `detectors/ipv4-not-product-version`. Verified live in Burp Pro 2026-10-22.
 - 2026-10-22 — **Anonymizer is standalone:** its predecessor tool is no longer referenced;
   fixtures are owned here and run only by FixtureTest.
+- 2026-10-22 — **Plural `tokens` is a count, not a credential.** Seen live: `X-Ratelimit-*-Tokens`
+  headers and `usage.*_tokens` / `max_tokens` fields got placeholders because their names contain
+  `token`. The `token` substring now does not fire on a key or header name that contains `tokens`;
+  every other sensitive word in the same name still does (`secret_tokens` maps), singular `token`
+  is unchanged, and the value still runs through the shape and free-text detectors, so a UUID or
+  JWT under a plural key is still mapped. Trade-off accepted: a short opaque credential under a
+  plural-only key (`access_tokens: "abc"`) is left for the entropy warning rather than mapped.
+  Fixture: `detectors/tokens-plural-is-a-count`; mutant verified.

@@ -1,0 +1,55 @@
+{
+  "name": "detectors/tokens-plural-is-a-count",
+  "description": "A key or header whose name contains 'tokens' (plural) carries a count (usage counters, max_tokens, rate-limit headers) and is left alone; singular 'token' and any other sensitive word in the same name still map, and values keep going through the shape detectors.",
+  "steps": [
+    {
+      "op": "anonymize",
+      "input": "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nX-Ratelimit-Limit-Tokens: 30000\r\nX-Ratelimit-Remaining-Tokens: 29876\r\nX-Ratelimit-Reset-Tokens: 2ms\r\nX-Api-Token: tok_live_7Qx9\r\n\r\n{\"usage\":{\"prompt_tokens\":12,\"completion_tokens\":34,\"total_tokens\":46},\"max_tokens\":1024,\"token\":\"s3cr3tv4lue\",\"secret_tokens\":[5,6],\"tokens\":\"a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d\"}",
+      "expect": {
+        "equals": "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nX-Ratelimit-Limit-Tokens: 30000\r\nX-Ratelimit-Remaining-Tokens: 29876\r\nX-Ratelimit-Reset-Tokens: 2ms\r\nX-Api-Token: [X_API_TOKEN_1]\r\n\r\n{\"usage\":{\"prompt_tokens\":12,\"completion_tokens\":34,\"total_tokens\":46},\"max_tokens\":1024,\"token\":\"[TOKEN_1]\",\"secret_tokens\":[\"[SECRET_TOKENS_1]\",\"[SECRET_TOKENS_2]\"],\"tokens\":\"00000000-0000-4000-8000-000000000001\"}",
+        "contains": [
+          "X-Ratelimit-Limit-Tokens: 30000",
+          "X-Ratelimit-Remaining-Tokens: 29876",
+          "X-Ratelimit-Reset-Tokens: 2ms",
+          "X-Api-Token: [X_API_TOKEN_1]",
+          "\"prompt_tokens\":12",
+          "\"completion_tokens\":34",
+          "\"total_tokens\":46",
+          "\"max_tokens\":1024",
+          "\"token\":\"[TOKEN_1]\"",
+          "\"secret_tokens\":[\"[SECRET_TOKENS_1]\",\"[SECRET_TOKENS_2]\"]"
+        ],
+        "notContains": [
+          "tok_live_7Qx9",
+          "s3cr3tv4lue",
+          "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+          "TOKENS_1]\r\n",
+          "PROMPT_TOKENS",
+          "MAX_TOKENS"
+        ]
+      },
+      "note": "the UUID under the plural key is still mapped by its shape, which is what keeps a credential under a count-shaped key from leaking"
+    },
+    {
+      "op": "anonymize",
+      "input": "@step[0].output",
+      "expect": {
+        "equals": "@step[0].output"
+      }
+    },
+    {
+      "op": "restore",
+      "input": "@step[0].output",
+      "expect": {
+        "equals": "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nX-Ratelimit-Limit-Tokens: 30000\r\nX-Ratelimit-Remaining-Tokens: 29876\r\nX-Ratelimit-Reset-Tokens: 2ms\r\nX-Api-Token: tok_live_7Qx9\r\n\r\n{\"usage\":{\"prompt_tokens\":12,\"completion_tokens\":34,\"total_tokens\":46},\"max_tokens\":1024,\"token\":\"s3cr3tv4lue\",\"secret_tokens\":[\"5\",\"6\"],\"tokens\":\"a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d\"}"
+      },
+      "note": "numeric secrets come back quoted, as in json-numeric-sensitive; the counts were never touched so they stay numbers"
+    }
+  ],
+  "counters": {
+    "header:x-api-token": 1,
+    "field:TOKEN": 1,
+    "field:SECRET_TOKENS": 2,
+    "uuid": 1
+  }
+}

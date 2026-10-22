@@ -82,8 +82,24 @@ public class Anonymizer(private val settings: Settings, private val mapping: Map
         val k = normKey(key)
         if (k.isEmpty() || k in keyNonsens) return false
         if (k in keyExact || k.endsWith("key")) return true
-        return keySubs.any { it in k }
+        return keySubs.any { it in k && !countWord(it, k) }
     }
+
+    /** True when a header name (any case) is treated as carrying a credential. */
+    public fun isSensitiveHeader(name: String): Boolean {
+        val n = name.lowercase()
+        if (n in sensitiveHeaders) return true
+        if (n in nonsensitiveHeaders) return false
+        return sensitiveHeaderSubs.any { it in n && !countWord(it, n) }
+    }
+
+    /**
+     * `tokens` (plural) in a key or header name denotes a count (`max_tokens`, `usage.total_tokens`,
+     * `X-Ratelimit-Remaining-Tokens`), not a credential, so the `token` substring does not fire on
+     * such a name. Other sensitive words in the same name still do (`secret_tokens`), and the value
+     * is still run through the shape and free-text detectors.
+     */
+    private fun countWord(sub: String, name: String): Boolean = sub == "token" && "tokens" in name
 
     // ------------------------------------------------------------ shape maps
 
@@ -584,7 +600,7 @@ public class Anonymizer(private val settings: Settings, private val mapping: Map
             hostName = if (Detectors.RE_IPV4.matches(hostName)) ipv4(hostName) else host(hostName)
             return lead + hostName + (if (port.isNotEmpty()) ":$port" else "")
         }
-        if (on("headers") && (n in sensitiveHeaders || (n !in nonsensitiveHeaders && sensitiveHeaderSubs.any { it in n }))) {
+        if (on("headers") && isSensitiveHeader(n)) {
             val shaped = shape(v)
             if (shaped != null && shaped != v) return lead + shaped
             return lead + ph("header:$n", v, label(n))
