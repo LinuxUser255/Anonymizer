@@ -460,4 +460,5 @@ The map JSON the extension stores in `extensionData()` and writes on Export is
   is unchanged, and the value still runs through the shape and free-text detectors, so a UUID or
   JWT under a plural key is still mapped. Trade-off accepted: a short opaque credential under a
   plural-only key (`access_tokens: "abc"`) is left for the entropy warning rather than mapped.
-  Fixture: `detectors/tokens-plural-is-a-count`; mutant verified.
+  Fixture: `detectors/tokens-plural-is-a-count`; mutant verified. Verified live in Burp Pro
+  2026-10-22.
