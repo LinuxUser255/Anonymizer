@@ -1,0 +1,22 @@
+{
+  "name": "detectors/ipv6-and-url-userinfo",
+  "description": "URL with userinfo and a bracketed IPv6 host; bare IPv6 in text; a clock time is not an IPv6 address.",
+  "steps": [
+    {
+      "op": "anonymize",
+      "input": "http://admin:pw@[2001:4860:4860::8888]:8080/x and 2001:4860:4860::8888 and 12:30:45",
+      "expect": {
+        "equals": "http://[USERINFO_1]@[2001:db8::1]:8080/x and 2001:db8::1 and 12:30:45",
+        "contains": ["http://[USERINFO_1]@[2001:db8::1]:8080/x", "12:30:45"],
+        "notContains": ["4860", "admin:pw"]
+      }
+    },
+    {
+      "op": "restore",
+      "input": "@step[0].output",
+      "expect": { "equals": "@step[0].input" }
+    }
+  ],
+  "mapping": { "ip6": { "2001:4860:4860::8888": "2001:db8::1" }, "userinfo": { "admin:pw": "[USERINFO_1]" } },
+  "counters": { "ip6": 1, "userinfo": 1 }
+}

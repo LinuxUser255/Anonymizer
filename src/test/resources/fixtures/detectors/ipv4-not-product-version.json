@@ -1,0 +1,26 @@
+{
+  "name": "detectors/ipv4-not-product-version",
+  "description": "A dotted quad right after a product token and slash (Chrome/154.0.0.0, Edg/, Version/) is a version, not an IP: left alone, no counter used. Real IPs in a path segment, free text and a body are still mapped, in order.",
+  "steps": [
+    {
+      "op": "anonymize",
+      "input": "POST /hosts/93.184.216.34 HTTP/1.1\r\nUser-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0\r\nX-Note: seen from 8.8.4.4\r\nContent-Type: text/plain\r\n\r\nclient (Version/17.4.1.2) at 93.184.216.34",
+      "expect": {
+        "contains": [
+          "POST /hosts/192.0.2.1 HTTP/1.1",
+          "Chrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0",
+          "seen from 192.0.2.2",
+          "client (Version/17.4.1.2) at 192.0.2.1"
+        ],
+        "notContains": ["93.184.216.34", "8.8.4.4", "192.0.2.3"]
+      }
+    },
+    {
+      "op": "restore",
+      "input": "@step[0].output",
+      "expect": { "equals": "@step[0].input" }
+    }
+  ],
+  "mapping": { "ip": { "93.184.216.34": "192.0.2.1", "8.8.4.4": "192.0.2.2" } },
+  "counters": { "ip": 2 }
+}

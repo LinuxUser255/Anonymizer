@@ -1,0 +1,34 @@
+{
+  "name": "detectors/json-fallback-malformed",
+  "description": "A JSON body that does not parse (trailing comma) still gets key/value rewriting through the regex fallback, and the malformation survives byte for byte.",
+  "steps": [
+    {
+      "op": "anonymize",
+      "input": "POST /api HTTP/1.1\r\nHost: app.corp.io\r\nContent-Type: application/json\r\nContent-Length: 41\r\n\r\n{\"password\":\"hunter2\",\"note\":\"hi\",\"n\":1,}",
+      "expect": {
+        "equals": "POST /api HTTP/1.1\r\nHost: app.target1.example\r\nContent-Type: application/json\r\nContent-Length: 46\r\n\r\n{\"password\":\"[PASSWORD_1]\",\"note\":\"hi\",\"n\":1,}",
+        "contains": [
+          "{\"password\":\"[PASSWORD_1]\",\"note\":\"hi\",\"n\":1,}",
+          "Host: app.target1.example",
+          "Content-Length: 46"
+        ],
+        "notContains": [
+          "hunter2",
+          "corp.io",
+          "Content-Length: 41"
+        ]
+      }
+    },
+    {
+      "op": "restore",
+      "input": "@step[0].output",
+      "expect": {
+        "equalsModuloContentLength": "@step[0].input"
+      }
+    }
+  ],
+  "counters": {
+    "field:PASSWORD": 1,
+    "host": 1
+  }
+}

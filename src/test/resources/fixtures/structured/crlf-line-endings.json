@@ -1,0 +1,25 @@
+{
+  "name": "structured/crlf-line-endings",
+  "description": "Line endings survive per line, so a CRLF head with an LF body stays mixed, and Content-Length counts the bytes actually sent, CRLF included (30 here, not the 29 an LF-normalised count would give).",
+  "steps": [
+    {
+      "op": "anonymize",
+      "input": "POST /n HTTP/1.1\r\nContent-Type: text/plain\r\nContent-Length: 22\r\n\r\nmail admin@corp.io\r\nok",
+      "expect": {
+        "equals": "POST /n HTTP/1.1\r\nContent-Type: text/plain\r\nContent-Length: 30\r\n\r\nmail user1@target1.example\r\nok"
+      }
+    },
+    {
+      "op": "restore",
+      "input": "@step[0].output",
+      "expect": { "equals": "POST /n HTTP/1.1\r\nContent-Type: text/plain\r\nContent-Length: 22\r\n\r\nmail admin@corp.io\r\nok" }
+    },
+    {
+      "op": "anonymize",
+      "input": "POST /n HTTP/1.1\r\nContent-Type: text/plain\r\n\r\nmail admin@corp.io\nok\r\nend",
+      "expect": {
+        "equals": "POST /n HTTP/1.1\r\nContent-Type: text/plain\r\n\r\nmail user1@target1.example\nok\r\nend"
+      }
+    }
+  ]
+}

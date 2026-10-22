@@ -1,0 +1,49 @@
+{
+  "name": "detectors/json-numeric-sensitive",
+  "description": "Numbers under sensitive keys become quoted placeholders; other numbers, booleans and nulls are untouched; nested objects pass the parent key down.",
+  "steps": [
+    {
+      "op": "anonymize",
+      "input": "POST /api HTTP/1.1\r\nContent-Type: application/json\r\n\r\n{\"pin\":1234,\"amount\":5,\"user\":{\"id\":7,\"name\":\"Ann\"},\"ok\":true,\"none\":null,\"emails\":[\"a@corp.io\",\"b@corp.io\"],\"tags\":[\"x\",\"c@corp.io\"]}",
+      "expect": {
+        "equals": "POST /api HTTP/1.1\r\nContent-Type: application/json\r\n\r\n{\"pin\":\"[PIN_1]\",\"amount\":5,\"user\":{\"id\":7,\"name\":\"[NAME_1]\"},\"ok\":true,\"none\":null,\"emails\":[\"user1@target1.example\",\"user2@target1.example\"],\"tags\":[\"x\",\"user3@target1.example\"]}",
+        "contains": [
+          "\"pin\":\"[PIN_1]\"",
+          "\"amount\":5",
+          "\"id\":7",
+          "\"name\":\"[NAME_1]\"",
+          "\"ok\":true",
+          "\"none\":null",
+          "\"emails\":[\"user1@target1.example\",\"user2@target1.example\"]",
+          "\"tags\":[\"x\",\"user3@target1.example\"]"
+        ],
+        "notContains": [
+          "1234",
+          "Ann",
+          "corp.io"
+        ]
+      }
+    },
+    {
+      "op": "anonymize",
+      "input": "@step[0].output",
+      "expect": {
+        "equals": "@step[0].output"
+      }
+    },
+    {
+      "op": "restore",
+      "input": "@step[0].output",
+      "expect": {
+        "equals": "POST /api HTTP/1.1\r\nContent-Type: application/json\r\n\r\n{\"pin\":\"1234\",\"amount\":5,\"user\":{\"id\":7,\"name\":\"Ann\"},\"ok\":true,\"none\":null,\"emails\":[\"a@corp.io\",\"b@corp.io\"],\"tags\":[\"x\",\"c@corp.io\"]}"
+      },
+      "note": "a numeric secret comes back as a string: restore is a substitution pass and does not know the original was a number"
+    }
+  ],
+  "counters": {
+    "field:PIN": 1,
+    "field:NAME": 1,
+    "email": 3,
+    "host": 1
+  }
+}

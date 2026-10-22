@@ -1,0 +1,21 @@
+{
+  "name": "pipeline/all-detectors-fire",
+  "description": "Every free-text detector fires once, in pipeline order, on a single line of text.",
+  "settings": { "terms": ["Globex"] },
+  "steps": [
+    {
+      "op": "anonymize",
+      "input": "mail jdoe@acme.com host api.acme.com ip 203.45.67.89 ip6 2001:4860:4860::8888 uuid c3b2a1d0-1234-4abc-9def-0123456789ab hex aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa card 4111 1111 1111 1111 ssn 123-45-6789 phone +1 555-123-4567 client Globex",
+      "expect": {
+        "equals": "mail user1@target1.example host api.target1.example ip 192.0.2.1 ip6 2001:db8::1 uuid 00000000-0000-4000-8000-000000000001 hex [HEX_1] card [CARD_1] ssn [SSN_1] phone [PHONE_1] client [CLIENT_1]",
+        "notContains": ["jdoe", "acme.com", "203.45.67.89", "4860", "c3b2a1d0", "aaaaaaaa", "4111", "123-45-6789", "555-123-4567", "Globex"]
+      }
+    },
+    {
+      "op": "restore",
+      "input": "@step[0].output",
+      "expect": { "equals": "mail jdoe@acme.com host api.acme.com ip 203.45.67.89 ip6 2001:4860:4860::8888 uuid c3b2a1d0-1234-4abc-9def-0123456789ab hex aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa card 4111 1111 1111 1111 ssn 123-45-6789 phone +1 555-123-4567 client globex" }
+    }
+  ],
+  "counters": { "email": 1, "host": 1, "ip": 1, "ip6": 1, "uuid": 1, "hex": 1, "card": 1, "ssn": 1, "phone": 1, "term": 1 }
+}

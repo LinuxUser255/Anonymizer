@@ -1,0 +1,19 @@
+{
+  "name": "restore/unknown-placeholder",
+  "description": "A placeholder the map never issued is left in place and flagged; known ones around it are still restored.",
+  "steps": [
+    {
+      "op": "anonymize",
+      "input": "GET / HTTP/1.1\nHost: app.corp.io\nCookie: sid=abc123def\n\n",
+      "expect": { "equals": "GET / HTTP/1.1\nHost: app.target1.example\nCookie: sid=[COOKIE_1]\n\n" }
+    },
+    {
+      "op": "restore",
+      "input": "GET / HTTP/1.1\nHost: app.target1.example\nCookie: sid=[COOKIE_9]; other=[COOKIE_1]\nX-Note: target4.example and user7@target1.example\n\n",
+      "expect": {
+        "equals": "GET / HTTP/1.1\nHost: app.corp.io\nCookie: sid=[COOKIE_9]; other=abc123def\nX-Note: target4.example and user7@target1.example\n\n",
+        "flags": { "unknown": ["[COOKIE_9]", "target4.example", "user7@target1.example"], "lenient": 0, "modifiedJwt": 0 }
+      }
+    }
+  ]
+}

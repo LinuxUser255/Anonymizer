@@ -1,0 +1,16 @@
+{
+  "name": "restore/percent-encoded",
+  "description": "A placeholder that was percent-encoded on the way out (form field, query string) is recognised in its encoded form and restored to the encoded original.",
+  "steps": [
+    {
+      "op": "anonymize",
+      "input": "POST /x HTTP/1.1\nContent-Type: application/x-www-form-urlencoded\n\nuser=bob%40corp.io&pass=hunter2&csrf=ZmFrZQ&page=2\n",
+      "expect": { "contains": ["user=user1%40target1.example", "pass=[PASS_1]"] }
+    },
+    {
+      "op": "restore",
+      "input": "@step[0].output",
+      "expect": { "equalsModuloContentLength": "@step[0].input", "flags": { "unknown": [], "lenient": 0 } }
+    }
+  ]
+}

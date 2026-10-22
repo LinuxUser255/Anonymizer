@@ -1,0 +1,28 @@
+{
+  "name": "mapping/numbering-continues-across-calls",
+  "description": "One shared mapping across calls: the same host gives the same placeholder, a new subdomain gets the next number, restore knows both.",
+  "steps": [
+    {
+      "op": "anonymize",
+      "input": "GET / HTTP/1.1\nHost: one.corp.io\n\n",
+      "expect": { "equals": "GET / HTTP/1.1\nHost: sub1.target1.example\n\n" }
+    },
+    {
+      "op": "anonymize",
+      "input": "GET / HTTP/1.1\nHost: one.corp.io\n\n",
+      "expect": { "equals": "@step[0].output" }
+    },
+    {
+      "op": "anonymize",
+      "input": "GET / HTTP/1.1\nHost: two.corp.io\n\n",
+      "expect": { "equals": "GET / HTTP/1.1\nHost: sub2.target1.example\n\n" }
+    },
+    {
+      "op": "restore",
+      "input": "@step[2].output",
+      "expect": { "equals": "@step[2].input" }
+    }
+  ],
+  "mapping": { "host": { "corp.io": "target1.example" }, "sub": { "one": "sub1", "two": "sub2" } },
+  "counters": { "host": 1, "sub": 2 }
+}

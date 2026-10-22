@@ -1,0 +1,28 @@
+{
+  "name": "detectors/terms-phone-basic",
+  "description": "Client terms (longest first, case-insensitive), phone numbers, Basic auth and a single-label Host header.",
+  "settings": { "terms": ["Globex Corp", "globex"] },
+  "steps": [
+    {
+      "op": "anonymize",
+      "input": "GET / HTTP/1.1\nHost: intranet\nAuthorization: Basic dXNlcjpwYXNz\n\nWelcome to Globex Corp (GLOBEX). Call +1 555-123-4567.",
+      "expect": {
+        "equals": "GET / HTTP/1.1\nHost: target1.example\nAuthorization: Basic [BASIC_1]\n\nWelcome to [CLIENT_1] ([CLIENT_2]). Call [PHONE_1].",
+        "contains": ["[CLIENT_1]", "[CLIENT_2]", "[PHONE_1]", "Authorization: Basic [BASIC_1]", "Host: target1.example"],
+        "notContains": ["lobex", "555", "dXNlcjpwYXNz", "intranet"]
+      }
+    },
+    {
+      "op": "restore",
+      "input": "@step[0].output",
+      "expect": { "equals": "GET / HTTP/1.1\nHost: intranet\nAuthorization: Basic dXNlcjpwYXNz\n\nWelcome to globex corp (globex). Call +1 555-123-4567." },
+      "note": "terms are keyed lowercase, so restore gives the lowercase form"
+    }
+  ],
+  "mapping": {
+    "term": { "globex corp": "[CLIENT_1]", "globex": "[CLIENT_2]" },
+    "host": { "intranet": "target1.example" },
+    "basic": { "dXNlcjpwYXNz": "[BASIC_1]" }
+  },
+  "counters": { "term": 2, "phone": 1, "basic": 1 }
+}

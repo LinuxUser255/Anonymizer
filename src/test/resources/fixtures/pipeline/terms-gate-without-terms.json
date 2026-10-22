@@ -1,0 +1,12 @@
+{
+  "name": "pipeline/terms-gate-without-terms",
+  "description": "With no client terms configured the terms step is a no-op and nothing else fires on plain words.",
+  "steps": [
+    {
+      "op": "anonymize",
+      "input": "Globex only",
+      "expect": { "equals": "Globex only" }
+    }
+  ],
+  "counters": {}
+}

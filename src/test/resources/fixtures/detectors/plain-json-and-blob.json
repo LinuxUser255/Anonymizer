@@ -1,0 +1,21 @@
+{
+  "name": "detectors/plain-json-and-blob",
+  "description": "A bare JSON document (no HTTP framing): sensitive exact key 'state' is labelled, a path value is kept, an opaque high-entropy value under a neutral key becomes a blob.",
+  "steps": [
+    {
+      "op": "anonymize",
+      "input": "{\"state\":\"a9F3kLm2Qx8ZpR7tWv1BnY4c\",\"path\":\"/api/v1/users/profile\",\"role\":\"user\",\"x\":\"a9F3kLm2Qx8ZpR7tWv1BnY4d\"}",
+      "expect": {
+        "equals": "{\"state\":\"[STATE_1]\",\"path\":\"/api/v1/users/profile\",\"role\":\"user\",\"x\":\"[BLOB_1]\"}",
+        "contains": ["\"state\":\"[STATE_1]\"", "\"path\":\"/api/v1/users/profile\"", "\"x\":\"[BLOB_1]\""],
+        "notContains": ["a9F3"]
+      }
+    },
+    {
+      "op": "restore",
+      "input": "@step[0].output",
+      "expect": { "equals": "@step[0].input" }
+    }
+  ],
+  "counters": { "blob": 1, "field:STATE": 1 }
+}

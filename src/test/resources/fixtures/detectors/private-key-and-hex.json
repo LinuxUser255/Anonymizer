@@ -1,0 +1,21 @@
+{
+  "name": "detectors/private-key-and-hex",
+  "description": "PEM private key blocks (multi-line) and long hex strings.",
+  "steps": [
+    {
+      "op": "anonymize",
+      "input": "-----BEGIN RSA PRIVATE KEY-----\nMIIE\n-----END RSA PRIVATE KEY----- h=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "expect": {
+        "equals": "[PRIVATE_KEY_1] h=[HEX_1]",
+        "contains": ["[PRIVATE_KEY_1]", "h=[HEX_1]"],
+        "notContains": ["MIIE", "aaaaaaaa"]
+      }
+    },
+    {
+      "op": "restore",
+      "input": "@step[0].output",
+      "expect": { "equals": "@step[0].input" }
+    }
+  ],
+  "counters": { "secret": 1, "hex": 1 }
+}

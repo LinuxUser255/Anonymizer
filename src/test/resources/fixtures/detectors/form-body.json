@@ -1,0 +1,41 @@
+{
+  "name": "detectors/form-body",
+  "description": "application/x-www-form-urlencoded body: percent-encoding preserved for the mapped email, sensitive field names become labels, plain values survive.",
+  "steps": [
+    {
+      "op": "anonymize",
+      "input": "POST /x HTTP/1.1\nContent-Type: application/x-www-form-urlencoded\n\nuser=bob%40corp.io&pass=hunter2&csrf=ZmFrZQ&page=2\n",
+      "expect": {
+        "equals": "POST /x HTTP/1.1\nContent-Type: application/x-www-form-urlencoded\n\nuser=user1%40target1.example&pass=[PASS_1]&csrf=[CSRF_1]&page=2\n",
+        "contains": [
+          "user=user1%40target1.example",
+          "pass=[PASS_1]",
+          "csrf=[CSRF_1]",
+          "page=2"
+        ],
+        "notContains": [
+          "bob",
+          "hunter2",
+          "ZmFrZQ",
+          "corp.io"
+        ]
+      }
+    }
+  ],
+  "note": "No restore step here: restoring a percent-encoded placeholder (user1%40target1.example) is covered by restore/percent-encoded.json.",
+  "mapping": {
+    "email": {
+      "bob@corp.io": "user1@target1.example"
+    },
+    "field:PASS": {
+      "hunter2": "[PASS_1]"
+    },
+    "field:CSRF": {
+      "ZmFrZQ": "[CSRF_1]"
+    }
+  },
+  "counters": {
+    "email": 1,
+    "host": 1
+  }
+}

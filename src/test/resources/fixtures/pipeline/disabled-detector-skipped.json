@@ -1,0 +1,16 @@
+{
+  "name": "pipeline/disabled-detector-skipped",
+  "description": "Turning a detector off skips just that step; the others still run.",
+  "settings": { "detect": { "ipv4": false, "card": false } },
+  "steps": [
+    {
+      "op": "anonymize",
+      "input": "ip 203.45.67.89 card 4111 1111 1111 1111 mail x@acme.com",
+      "expect": {
+        "equals": "ip 203.45.67.89 card 4111 1111 1111 1111 mail user1@target1.example",
+        "contains": ["203.45.67.89", "4111 1111 1111 1111", "user1@target1.example"]
+      }
+    }
+  ],
+  "counters": { "email": 1, "host": 1 }
+}

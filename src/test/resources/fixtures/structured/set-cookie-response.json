@@ -1,0 +1,43 @@
+{
+  "name": "structured/set-cookie-response",
+  "description": "Response only: Set-Cookie value and Domain attribute are mapped, attributes survive, keep_cookies keeps a named cookie's value, a sensitive header by substring is replaced whole.",
+  "settings": {
+    "keep_cookies": [
+      "lang"
+    ]
+  },
+  "steps": [
+    {
+      "op": "anonymize",
+      "input": "HTTP/1.1 302 Found\r\nLocation: https://portal.corp.io/home?session=abc\r\nSet-Cookie: sid=abcdef1234567890abcdef1234567890abcdef12; Path=/; Domain=.corp.io; HttpOnly\r\nSet-Cookie: lang=en; Path=/\r\nX-Request-Token: tok-123\r\nContent-Type: text/html\r\nContent-Length: 0\r\n\r\n",
+      "expect": {
+        "equals": "HTTP/1.1 302 Found\r\nLocation: https://portal.target1.example/home?session=[SESSION_1]\r\nSet-Cookie: sid=[COOKIE_1]; Path=/; Domain=.target1.example; HttpOnly\r\nSet-Cookie: lang=en; Path=/\r\nX-Request-Token: [X_REQUEST_TOKEN_1]\r\nContent-Type: text/html\r\nContent-Length: 0\r\n\r\n",
+        "contains": [
+          "Location: https://portal.target1.example/home?session=[SESSION_1]",
+          "Set-Cookie: sid=[COOKIE_1]; Path=/; Domain=.target1.example; HttpOnly",
+          "Set-Cookie: lang=en; Path=/",
+          "X-Request-Token: [X_REQUEST_TOKEN_1]",
+          "Content-Length: 0"
+        ],
+        "notContains": [
+          "corp.io",
+          "abcdef",
+          "tok-123"
+        ]
+      }
+    },
+    {
+      "op": "restore",
+      "input": "@step[0].output",
+      "expect": {
+        "equals": "@step[0].input"
+      }
+    }
+  ],
+  "counters": {
+    "host": 1,
+    "cookie": 1,
+    "header:x-request-token": 1,
+    "field:SESSION": 1
+  }
+}

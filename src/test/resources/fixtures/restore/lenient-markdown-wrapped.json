@@ -1,0 +1,28 @@
+{
+  "name": "restore/lenient-markdown-wrapped",
+  "description": "LLM-mangled placeholders. Case-insensitive bracket tokens are always restored (and highlighted); bare tokens and -/_ confusion only with lenient on. Markdown emphasis around a placeholder is left alone.",
+  "steps": [
+    {
+      "op": "anonymize",
+      "input": "GET / HTTP/1.1\nHost: app.corp.io\nCookie: sid=abc123def\n\n",
+      "expect": { "contains": ["sid=[COOKIE_1]", "Host: app.target1.example"] }
+    },
+    {
+      "op": "restore",
+      "input": "**[cookie_1]** and `[COOKIE_1]` and COOKIE_1 and target1-example and app.target1.example",
+      "expect": {
+        "equals": "**abc123def** and `abc123def` and COOKIE_1 and target1-example and app.corp.io",
+        "flags": { "lenient": 1, "unknown": [] }
+      }
+    },
+    {
+      "op": "restore",
+      "lenient": true,
+      "input": "**[cookie_1]** and `[COOKIE_1]` and COOKIE_1 and target1-example and app.target1.example",
+      "expect": {
+        "equals": "**abc123def** and `abc123def` and abc123def and corp.io and app.corp.io",
+        "flags": { "lenient": 3, "unknown": [] }
+      }
+    }
+  ]
+}

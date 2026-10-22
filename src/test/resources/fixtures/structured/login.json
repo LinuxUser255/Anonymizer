@@ -1,0 +1,102 @@
+{
+  "name": "structured/login",
+  "description": "Full login request and response: every structured detector fires; idempotent; restore roundtrips (Content-Length aside).",
+  "settings": {
+    "terms": [
+      "acme"
+    ]
+  },
+  "steps": [
+    {
+      "op": "anonymize",
+      "input": "POST /api/login?next=https%3A%2F%2Fportal.acme.com%2Fx&q=1 HTTP/1.1\r\nHost: api.acme.com\r\nCookie: sid=9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08; lang=en\r\nAuthorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6ImsxIn0.eyJzdWIiOiJqZG9lQGFjbWUuY29tIiwibmFtZSI6IkpvaG4gRG9lIiwicm9sZSI6ImFkbWluIn0.c2lnbmF0dXJl\r\nX-Api-Key: sk_test_4eC39HqLyjWDarjtT1zdp7dc\r\nX-Forwarded-For: 203.45.67.89\r\nContent-Type: application/json\r\nContent-Length: 1\r\n\r\n{\"username\":\"jdoe\",\"password\":\"Winter2024!\",\"email\":\"john.doe@acme.com\",\"card\":\"4111 1111 1111 1111\",\"ssn\":\"123-45-6789\",\"id\":\"c3b2a1d0-1234-4abc-9def-0123456789ab\",\"profile\":{\"first_name\":\"John\"},\"ok\":true,\"n\":3}\r\n\r\nHTTP/1.1 200 OK\r\nSet-Cookie: sid=abcdef1234567890abcdef1234567890abcdef12; Path=/; Domain=.acme.com; HttpOnly\r\nServer: nginx/1.25\r\nContent-Type: application/json\r\n\r\n{\"user\":{\"email\":\"john.doe@acme.com\",\"name\":\"John Doe\"},\"ip\":\"10.1.2.3\",\"aws\":\"AKIAIOSFODNN7EXAMPLE\",\"s3\":\"https://acme-prod.s3.amazonaws.com/x\",\"cdn\":\"https://cdnjs.cloudflare.com/ajax/libs/jquery.min.js\"}\r\n",
+      "expect": {
+        "equals": "POST /api/login?next=https%3A%2F%2Fportal.target1.example%2Fx&q=1 HTTP/1.1\r\nHost: api.target1.example\r\nCookie: sid=[COOKIE_1]; lang=[COOKIE_2]\r\nAuthorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6IltLSURfMV0ifQ.eyJzdWIiOiJ1c2VyMUB0YXJnZXQxLmV4YW1wbGUiLCJuYW1lIjoiW05BTUVfMV0iLCJyb2xlIjoiYWRtaW4ifQ.REDACTED_SIGNATURE_1\r\nX-Api-Key: [X_API_KEY_1]\r\nX-Forwarded-For: 192.0.2.1\r\nContent-Type: application/json\r\nContent-Length: 221\r\n\r\n{\"username\":\"[USERNAME_1]\",\"password\":\"[PASSWORD_1]\",\"email\":\"user2@target1.example\",\"card\":\"[CARD_1]\",\"ssn\":\"[SSN_1]\",\"id\":\"00000000-0000-4000-8000-000000000001\",\"profile\":{\"first_name\":\"[FIRST_NAME_1]\"},\"ok\":true,\"n\":3}\r\n\r\nHTTP/1.1 200 OK\r\nSet-Cookie: sid=[COOKIE_3]; Path=/; Domain=.target1.example; HttpOnly\r\nServer: nginx/1.25\r\nContent-Type: application/json\r\n\r\n{\"user\":{\"email\":\"user2@target1.example\",\"name\":\"[NAME_1]\"},\"ip\":\"192.0.2.2\",\"aws\":\"[SECRET_1]\",\"s3\":\"https://sub1.s3.amazonaws.com/x\",\"cdn\":\"https://cdnjs.cloudflare.com/ajax/libs/jquery.min.js\"}\r\n",
+        "contains": [
+          "Host: api.target1.example",
+          "next=https%3A%2F%2Fportal.target1.example%2Fx&q=1",
+          "Domain=.target1.example",
+          "X-Forwarded-For: 192.0.2.1",
+          "00000000-0000-4000-8000-000000000001",
+          "lang=[COOKIE_2]",
+          "\"password\":\"[PASSWORD_1]\"",
+          "\"ok\":true,\"n\":3",
+          "https://cdnjs.cloudflare.com/ajax/libs/jquery.min.js",
+          "https://sub1.s3.amazonaws.com/x",
+          "Server: nginx/1.25",
+          "X-Api-Key: [X_API_KEY_1]",
+          "\r\n"
+        ],
+        "notContains": [
+          "acme.com",
+          "9f86d081",
+          "Winter2024",
+          "john.doe",
+          "John Doe",
+          "jdoe",
+          "4111",
+          "123-45-6789",
+          "sk_test",
+          "203.45.67.89",
+          "10.1.2.3",
+          "AKIA",
+          "abcdef1234567890",
+          "c3b2a1d0",
+          "acme-prod",
+          "k1\"",
+          "Content-Length: 1\r\n"
+        ],
+        "jwtClaims": {
+          "header": "Authorization",
+          "contains": [
+            "\"role\":\"admin\""
+          ],
+          "notContains": [
+            "acme",
+            "John"
+          ]
+        }
+      }
+    },
+    {
+      "op": "anonymize",
+      "input": "@step[0].output",
+      "expect": {
+        "equals": "@step[0].output"
+      },
+      "note": "idempotent: anonymizing already-anonymized text changes nothing"
+    },
+    {
+      "op": "restore",
+      "input": "@step[0].output",
+      "expect": {
+        "equalsModuloContentLength": "@step[0].input"
+      }
+    }
+  ],
+  "mapping": {
+    "host": {
+      "acme.com": "target1.example"
+    },
+    "sub": {
+      "acme-prod": "sub1"
+    },
+    "email": {
+      "jdoe@acme.com": "user1@target1.example",
+      "john.doe@acme.com": "user2@target1.example"
+    },
+    "ip": {
+      "203.45.67.89": "192.0.2.1",
+      "10.1.2.3": "192.0.2.2"
+    }
+  },
+  "counters": {
+    "host": 1,
+    "sub": 1,
+    "email": 2,
+    "cookie": 3,
+    "ip": 2,
+    "uuid": 1,
+    "jwt": 1
+  }
+}

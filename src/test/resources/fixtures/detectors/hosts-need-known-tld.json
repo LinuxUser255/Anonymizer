@@ -1,0 +1,17 @@
+{
+  "name": "detectors/hosts-need-known-tld",
+  "description": "Hostnames in free text are only mapped when the TLD is known, so file names like jquery.min.js are left alone.",
+  "steps": [
+    {
+      "op": "anonymize",
+      "input": "see jquery.min.js and README.md and setup.py and corp.internal and foo.bar",
+      "expect": {
+        "equals": "see jquery.min.js and README.md and setup.py and target1.example and foo.bar",
+        "contains": ["jquery.min.js", "README.md", "setup.py", "foo.bar"],
+        "notContains": ["corp.internal"]
+      }
+    }
+  ],
+  "mapping": { "host": { "corp.internal": "target1.example" } },
+  "counters": { "host": 1 }
+}

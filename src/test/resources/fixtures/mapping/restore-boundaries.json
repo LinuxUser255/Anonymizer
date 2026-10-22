@@ -1,0 +1,19 @@
+{
+  "name": "mapping/restore-boundaries",
+  "description": "Restore matches whole placeholders only: sub1 does not match inside sub10 or sub1x, and the longest placeholder wins.",
+  "steps": [
+    {
+      "op": "anonymize",
+      "input": "alpha.corp.io bravo.corp.io charlie.corp.io delta.corp.io echo.corp.io foxtrot.corp.io golf.corp.io hotel.corp.io india.corp.io juliet.corp.io",
+      "expect": {
+        "equals": "sub1.target1.example sub2.target1.example sub3.target1.example sub4.target1.example sub5.target1.example sub6.target1.example sub7.target1.example sub8.target1.example sub9.target1.example sub10.target1.example"
+      }
+    },
+    {
+      "op": "restore",
+      "input": "sub1 sub10 sub1x target1.example",
+      "expect": { "equals": "alpha juliet sub1x corp.io" }
+    }
+  ],
+  "counters": { "host": 1, "sub": 10 }
+}

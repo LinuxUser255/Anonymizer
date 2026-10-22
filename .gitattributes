@@ -1,0 +1,5 @@
+# Fixture HTTP messages must keep their exact line endings (CRLF is part of the contract).
+*.http -text
+*.expected.http -text
+# Gradle wrapper jar is binary.
+gradle/wrapper/gradle-wrapper.jar binary

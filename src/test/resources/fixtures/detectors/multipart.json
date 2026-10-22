@@ -1,0 +1,34 @@
+{
+  "name": "detectors/multipart",
+  "description": "multipart/form-data: a sensitive part is replaced whole, a text file part goes through the generic pass, boundaries survive.",
+  "steps": [
+    {
+      "op": "anonymize",
+      "input": "POST /u HTTP/1.1\nContent-Type: multipart/form-data; boundary=----b\n\n------b\nContent-Disposition: form-data; name=\"password\"\n\nsecret1\n------b\nContent-Disposition: form-data; name=\"file\"; filename=\"a.txt\"\nContent-Type: text/plain\n\nhello admin@corp.io\n------b--\n",
+      "expect": {
+        "equals": "POST /u HTTP/1.1\nContent-Type: multipart/form-data; boundary=----b\n\n------b\nContent-Disposition: form-data; name=\"password\"\n\n[PASSWORD_1]\n------b\nContent-Disposition: form-data; name=\"file\"; filename=\"a.txt\"\nContent-Type: text/plain\n\nhello user1@target1.example\n------b--\n",
+        "contains": [
+          "[PASSWORD_1]",
+          "hello user1@target1.example",
+          "------b--",
+          "name=\"password\""
+        ],
+        "notContains": [
+          "secret1",
+          "admin@corp.io"
+        ]
+      }
+    },
+    {
+      "op": "restore",
+      "input": "@step[0].output",
+      "expect": {
+        "equalsModuloContentLength": "@step[0].input"
+      }
+    }
+  ],
+  "counters": {
+    "email": 1,
+    "host": 1
+  }
+}

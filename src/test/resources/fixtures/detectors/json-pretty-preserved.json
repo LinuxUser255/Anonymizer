@@ -1,0 +1,23 @@
+{
+  "name": "detectors/json-pretty-preserved",
+  "description": "JSON bodies are rewritten in place: pretty-printed JSON keeps its whitespace, key order and escapes (\\/, \\u00e9); only the replaced tokens change. Idempotent, and restore gives back the input byte for byte.",
+  "steps": [
+    {
+      "op": "anonymize",
+      "input": "POST /api HTTP/1.1\r\nContent-Type: application/json\r\nContent-Length: 75\r\n\r\n{\n  \"password\" : \"hunter2\",\n  \"n\": 1,\n  \"path\": \"\\/a\\/b\",\n  \"u\": \"\\u00e9\"\n}",
+      "expect": {
+        "equals": "POST /api HTTP/1.1\r\nContent-Type: application/json\r\nContent-Length: 80\r\n\r\n{\n  \"password\" : \"[PASSWORD_1]\",\n  \"n\": 1,\n  \"path\": \"\\/a\\/b\",\n  \"u\": \"\\u00e9\"\n}"
+      }
+    },
+    {
+      "op": "anonymize",
+      "input": "@step[0].output",
+      "expect": { "equals": "@step[0].output" }
+    },
+    {
+      "op": "restore",
+      "input": "@step[0].output",
+      "expect": { "equals": "@step[0].input" }
+    }
+  ]
+}

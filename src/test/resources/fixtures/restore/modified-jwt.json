@@ -1,0 +1,24 @@
+{
+  "name": "restore/modified-jwt",
+  "description": "A synthetic JWT whose claims the LLM edited no longer matches the map; it is left in place and flagged as modified, never guessed.",
+  "steps": [
+    {
+      "op": "anonymize",
+      "input": "GET / HTTP/1.1\nAuthorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6ImsxIn0.eyJzdWIiOiJqZG9lQGFjbWUuY29tIiwibmFtZSI6IkpvaG4gRG9lIiwicm9sZSI6ImFkbWluIn0.c2lnbmF0dXJl\n\n",
+      "expect": { "equals": "GET / HTTP/1.1\nAuthorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6IltLSURfMV0ifQ.eyJzdWIiOiJ1c2VyMUB0YXJnZXQxLmV4YW1wbGUiLCJuYW1lIjoiW05BTUVfMV0iLCJyb2xlIjoiYWRtaW4ifQ.REDACTED_SIGNATURE_1\n\n" }
+    },
+    {
+      "op": "restore",
+      "input": "@step[0].output",
+      "expect": { "equals": "@step[0].input", "flags": { "modifiedJwt": 0, "unknown": [] } }
+    },
+    {
+      "op": "restore",
+      "input": "GET / HTTP/1.1\nAuthorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6IltLSURfMV0ifQ.eyJyb2xlIjoicm9vdCJ9.REDACTED_SIGNATURE_1\n\n",
+      "expect": {
+        "equals": "GET / HTTP/1.1\nAuthorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6IltLSURfMV0ifQ.eyJyb2xlIjoicm9vdCJ9.REDACTED_SIGNATURE_1\n\n",
+        "flags": { "modifiedJwt": 1, "unknown": [] }
+      }
+    }
+  ]
+}

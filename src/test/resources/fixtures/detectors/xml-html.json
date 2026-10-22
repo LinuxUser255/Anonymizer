@@ -1,0 +1,30 @@
+{
+  "name": "detectors/xml-html",
+  "description": "Plain text (no HTTP start line) with XML elements and HTML inputs: sensitive tag/name values are replaced, others kept.",
+  "steps": [
+    {
+      "op": "anonymize",
+      "input": "<user><password>pw1</password><role>x</role></user><input type=\"hidden\" name=\"csrf_token\" value=\"abc123\"><input name=\"q\" value=\"shoes\">",
+      "expect": {
+        "equals": "<user><password>[PASSWORD_1]</password><role>x</role></user><input type=\"hidden\" name=\"csrf_token\" value=\"[CSRF_TOKEN_1]\"><input name=\"q\" value=\"shoes\">",
+        "contains": [
+          "<password>[PASSWORD_1]</password>",
+          "<role>x</role>",
+          "value=\"[CSRF_TOKEN_1]\"",
+          "value=\"shoes\""
+        ],
+        "notContains": [
+          "pw1",
+          "abc123"
+        ]
+      }
+    },
+    {
+      "op": "restore",
+      "input": "@step[0].output",
+      "expect": {
+        "equals": "@step[0].input"
+      }
+    }
+  ]
+}
