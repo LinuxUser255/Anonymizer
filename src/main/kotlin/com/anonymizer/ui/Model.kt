@@ -45,6 +45,9 @@ public interface TabHost {
     public fun sendToRepeater(text: String, known: List<ServiceInfo>, parent: Component)
     public fun log(message: String)
 
+    /** Writes [message] and the stack trace of [error] to the extension's error stream. */
+    public fun logError(message: String, error: Throwable)
+
     /** Burp's main window, the parent for every dialog (CLAUDE.md house rule). */
     public fun suiteFrame(): java.awt.Frame?
 }

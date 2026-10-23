@@ -1,8 +1,9 @@
 # Anonymizer — design plan (living document)
 
-Status: **milestones 1–5 code-complete, in live testing (2026-10-22).** The engine compiles, the
-fixture corpus and unit tests are green, and the extension loads in Burp Pro (anonymize, highlights,
-Copy verified by hand). Each section is tagged **Decided**, **Proposed** (my default unless objected
+Status: **milestones 1–5 code-complete, milestone 6 (BApp polish) in progress (2026-10-23).** The
+engine compiles, the fixture corpus and unit tests are green, and the extension loads in Burp Pro
+(anonymize, highlights, Copy verified by hand). The criteria audit is `docs/BAPP-CRITERIA.md`; the
+submission text is `docs/SUBMISSION.md`. Each section is tagged **Decided**, **Proposed** (my default unless objected
 to) or **Open**. When something moves between tags, add a line to the decision log at the bottom.
 This file is the plan; `CLAUDE.md` holds the rules agents follow while building it.
 
@@ -384,7 +385,9 @@ The map JSON the extension stores in `extensionData()` and writes on Export is
 4. **Toggles and terms UI** with live re-render; highlights; leftover-entropy warnings.
 5. **Multi-select** → Copy all as Markdown.
 6. **BApp polish.** Clean unload, large-project and Community tests, README with before/after and
-   the RequestRedactorX section, acceptance-criteria pass, submission.
+   the RequestRedactorX section, acceptance-criteria pass, submission. Tracked in
+   `docs/BAPP-CRITERIA.md` (per-criterion status and the open list) and `docs/SUBMISSION.md` (the
+   process and the exact issue body for `PortSwigger/extension-portal`).
 
 1–3 is a usable tool for your own engagements; 4–6 is what makes it a BApp.
 
@@ -462,3 +465,14 @@ The map JSON the extension stores in `extensionData()` and writes on Export is
   plural-only key (`access_tokens: "abc"`) is left for the entropy warning rather than mapped.
   Fixture: `detectors/tokens-plural-is-a-count`; mutant verified. Verified live in Burp Pro
   2026-10-22.
+- 2026-10-23 — **BApp criteria audit** (`docs/BAPP-CRITERIA.md`). Four fixes, all in `burp/` and
+  `ui/`, engine untouched: (1) list and table labels render traffic-derived text with HTML disabled
+  (`PlainRenderers`; a `JLabel` renders a leading `<html>` and would fetch `<img src>` URLs chosen
+  by the target), and `JOptionPane` texts never start with user content; (2) engine failures go to
+  `logToError(message, cause)` with the stack trace, via a new `TabHost.logError`; (3) a message
+  over the 2 MB cap is cut before it is decoded on the EDT (`ContextMenu.decodeCapped`); (4) the
+  mapping dialog is tracked and disposed on unload. Test: `PlainRenderersTest`, whose third case
+  shows the stock renderer does build an HTML view (the mutant). README gained the "How it differs
+  from RequestRedactorX" table and the statement that no AI provider is ever contacted (criterion
+  12 does not apply). Submission goes through a `New extension submission` issue on
+  `PortSwigger/extension-portal`, not email; PortSwigger forks the repo and builds the JAR.

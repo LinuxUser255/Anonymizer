@@ -50,6 +50,7 @@ public class AnonymizerTab(private val host: TabHost) : JPanel(BorderLayout()) {
     private var settingsVersion = 0
     private var loadingSettings = false
     private var shown: Item? = null
+    private var mappingDialog: JDialog? = null
     private val rerenderTimer = Timer(150) { renderSelected(force = true) }.apply { isRepeats = false }
 
     init {
@@ -107,9 +108,11 @@ public class AnonymizerTab(private val host: TabHost) : JPanel(BorderLayout()) {
     public fun knownServices(): List<ServiceInfo> =
         (0 until itemsModel.size()).mapNotNull { itemsModel.get(it).service }.distinct()
 
-    /** Stops timers; part of `extensionUnloaded()`. */
+    /** Stops timers and closes any window the tab opened; part of `extensionUnloaded()`. */
     public fun dispose() {
         rerenderTimer.stop()
+        mappingDialog?.dispose()
+        mappingDialog = null
     }
 
     // ------------------------------------------------------------ layout
@@ -117,6 +120,7 @@ public class AnonymizerTab(private val host: TabHost) : JPanel(BorderLayout()) {
     private fun buildItemsBar(): JPanel {
         itemList.selectionMode = ListSelectionModel.MULTIPLE_INTERVAL_SELECTION
         itemList.visibleRowCount = 4
+        itemList.cellRenderer = PlainRenderers.list() // titles carry the request path: untrusted
         itemList.addListSelectionListener { e -> if (!e.valueIsAdjusting) renderSelected(force = false) }
         val buttons = JPanel().apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
@@ -276,7 +280,7 @@ public class AnonymizerTab(private val host: TabHost) : JPanel(BorderLayout()) {
             if (shown === item) show(item, result)
         }, { e ->
             summaryLabel.text = "failed: ${e.message}"
-            host.log("Anonymizer: anonymize failed for #${item.id}: $e")
+            host.logError("Anonymizer: anonymize failed for #${item.id}", e)
         })
     }
 
@@ -301,7 +305,7 @@ public class AnonymizerTab(private val host: TabHost) : JPanel(BorderLayout()) {
             updateMapping(result.snapshot)
             ensureFresh(items, done)
         }, { e ->
-            host.log("Anonymizer: anonymize failed for #${stale.id}: $e")
+            host.logError("Anonymizer: anonymize failed for #${stale.id}", e)
             summaryLabel.text = "failed: ${e.message}"
         })
     }
@@ -340,7 +344,7 @@ public class AnonymizerTab(private val host: TabHost) : JPanel(BorderLayout()) {
             restoreStatus.text = describe(r)
         }, { e ->
             restoreStatus.text = "failed: ${e.message}"
-            host.log("Anonymizer: restore failed: $e")
+            host.logError("Anonymizer: restore failed", e)
         })
     }
 
@@ -359,12 +363,18 @@ public class AnonymizerTab(private val host: TabHost) : JPanel(BorderLayout()) {
         host.mapSnapshot { snap ->
             val model = DefaultTableModel(arrayOf("Category", "Placeholder", "Original"), 0)
             for (e in snap.entries()) model.addRow(arrayOf(e.category, e.placeholder, e.original))
-            val table = JTable(model).apply { autoCreateRowSorter = true }
+            val table = JTable(model).apply {
+                autoCreateRowSorter = true
+                // The Original column is raw traffic; never let a JLabel render it as HTML.
+                setDefaultRenderer(Any::class.java, PlainRenderers.table())
+            }
+            mappingDialog?.dispose()
             val owner: java.awt.Window? = host.suiteFrame() ?: SwingUtilities.getWindowAncestor(this)
             val dialog = JDialog(owner, "Anonymizer mapping (${snap.size} entries)")
             dialog.contentPane.add(JScrollPane(table))
             dialog.setSize(800, 500)
             dialog.setLocationRelativeTo(owner)
+            mappingDialog = dialog
             dialog.isVisible = true
         }
     }

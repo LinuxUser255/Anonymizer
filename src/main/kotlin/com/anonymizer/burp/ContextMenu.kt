@@ -56,7 +56,7 @@ public class ContextMenu(private val api: MontoyaApi, private val tab: Anonymize
         // method()/path() throw MalformedRequestException on a half-edited request; the item is still useful.
         val title = runCatching { "${req.method()} ${req.path()}" }.getOrDefault("request")
         val service = req.httpService()?.let { ServiceInfo(it.host(), it.port(), it.secure()) }
-        onEdt { tab.addItem(title, String(bytes, Charsets.UTF_8), service, isRequest = true) }
+        onEdt { tab.addItem(title, decodeCapped(bytes), service, isRequest = true) }
     }
 
     private fun addResponse(rr: HttpRequestResponse) {
@@ -66,7 +66,17 @@ public class ContextMenu(private val api: MontoyaApi, private val tab: Anonymize
         val reqLine = runCatching { "${req?.method() ?: ""} ${req?.path() ?: ""}" }.getOrDefault("")
         val title = "${res.statusCode()} ← $reqLine".trim()
         val service = req?.httpService()?.let { ServiceInfo(it.host(), it.port(), it.secure()) }
-        onEdt { tab.addItem(title, String(bytes, Charsets.UTF_8), service, isRequest = false) }
+        onEdt { tab.addItem(title, decodeCapped(bytes), service, isRequest = false) }
+    }
+
+    /**
+     * Menu actions run on the EDT, so a message over the engine's body cap is cut before it is
+     * decoded or held by the tab (BApp criterion 5). The engine's own cap then reports the cut.
+     */
+    private fun decodeCapped(bytes: ByteArray): String {
+        if (bytes.size <= EngineService.BODY_CAP) return String(bytes, Charsets.UTF_8)
+        val head = String(bytes, 0, EngineService.BODY_CAP, Charsets.UTF_8)
+        return head + "\n[truncated: ${bytes.size - EngineService.BODY_CAP} bytes beyond the ${EngineService.BODY_CAP / 1_000_000} MB cap]"
     }
 
     private fun addTermFromEditor(e: MessageEditorHttpRequestResponse) {

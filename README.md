@@ -31,7 +31,9 @@ Two properties make this more than redaction:
 - **Reversible.** Every replacement is kept in a session map. Paste the LLM's reply into the Restore
   pane → **Restore** → **Send to Repeater**.
 
-The extension is passive: it never sends traffic. "Send to Repeater" opens a tab; you send.
+The extension is passive: it never sends traffic. "Send to Repeater" opens a tab; you send. It
+also never talks to an AI provider: it prepares text for you to paste into whichever model you use,
+and reads back whatever you paste in. Nothing leaves Burp except through your clipboard.
 
 ## What is detected
 
@@ -63,6 +65,21 @@ The session map lives with the Burp project. Temporary projects (Burp Community)
 **Export** it first, **Import** it later. Clearing the map restarts numbering; nothing else does.
 Detector toggles follow you across projects; client terms stay with the project.
 
+
+## How it differs from RequestRedactorX
+
+[RequestRedactorX](https://github.com/PortSwigger/request-redactor-x) copies a request with
+headers and chosen parameters blanked out (`[REDACTED]`). That is the right tool for sharing a
+request in a report. Anonymizer solves a different problem: working with an LLM on live traffic.
+
+| | RequestRedactorX | Anonymizer |
+| --- | --- | --- |
+| Output | one-way redaction, same placeholder for every value | pseudonyms: a distinct, stable placeholder per value |
+| Same cookie in two requests | both `[REDACTED]` | both `[COOKIE_3]`, so the model can follow the session |
+| Hosts, emails, UUIDs, JWTs | blanked | shape-preserving, so the model's crafted request still parses |
+| Values found by shape | no, only by configured name | yes: secrets, JWTs, card numbers, hex, high-entropy strings, your client terms |
+| Responses | no | yes, including `Set-Cookie`, JSON, HTML inputs |
+| Getting the answer back | manual | paste → Restore → Send to Repeater, with unknown or modified placeholders flagged |
 
 ## Building
 

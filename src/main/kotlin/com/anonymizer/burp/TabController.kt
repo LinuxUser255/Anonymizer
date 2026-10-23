@@ -35,17 +35,17 @@ public class TabController(
     }
 
     override fun mapSnapshot(done: (MappingSnapshot) -> Unit) {
-        deliver(engine.snapshot(), done) { log("Anonymizer: snapshot failed: $it") }
+        deliver(engine.snapshot(), done) { logError("Anonymizer: snapshot failed", it) }
     }
 
     override fun clearMap(done: (MappingSnapshot) -> Unit) {
-        deliver(engine.clear(), done) { log("Anonymizer: clear failed: $it") }
+        deliver(engine.clear(), done) { logError("Anonymizer: clear failed", it) }
     }
 
     override fun exportMap(parent: Component) {
         deliver(engine.snapshot(), { snap ->
             if (MapFile.export(parent, snap)) log("Anonymizer: exported ${snap.size} map entries")
-        }) { log("Anonymizer: export failed: $it") }
+        }) { logError("Anonymizer: export failed", it) }
     }
 
     override fun importMap(parent: Component, done: (MappingSnapshot) -> Unit) {
@@ -53,7 +53,7 @@ public class TabController(
         deliver(engine.load(snap), { loaded ->
             log("Anonymizer: imported ${loaded.size} map entries")
             done(loaded)
-        }) { log("Anonymizer: import failed: $it") }
+        }) { logError("Anonymizer: import failed", it) }
     }
 
     override fun copy(text: String) {
@@ -66,6 +66,11 @@ public class TabController(
 
     override fun log(message: String) {
         api.logging().logToOutput(message)
+    }
+
+    /** Burp does not catch exceptions from extension threads (BApp criterion 5): stack trace to the error stream. */
+    override fun logError(message: String, error: Throwable) {
+        api.logging().logToError(message, error)
     }
 
     override fun suiteFrame(): java.awt.Frame? = api.userInterface().swingUtils().suiteFrame()

@@ -26,7 +26,8 @@ public object MapFile {
         var file = chooser.selectedFile ?: return false
         if (!file.name.endsWith(".json")) file = File(file.parentFile, file.name + SUFFIX)
         if (file.exists()) {
-            val overwrite = JOptionPane.showConfirmDialog(parent, "${file.name} exists. Overwrite?", "Export map", JOptionPane.YES_NO_OPTION)
+            // Message text never starts with user-chosen content: a JOptionPane renders a leading "<html>" as HTML.
+            val overwrite = JOptionPane.showConfirmDialog(parent, "File ${file.name} exists. Overwrite?", "Export map", JOptionPane.YES_NO_OPTION)
             if (overwrite != JOptionPane.YES_OPTION) return false
         }
         return try {
@@ -59,7 +60,7 @@ public object MapFile {
             JOptionPane.showMessageDialog(parent, "Could not read ${file.path}: ${e.message}", "Import map", JOptionPane.ERROR_MESSAGE)
             null
         } catch (e: IllegalArgumentException) {
-            JOptionPane.showMessageDialog(parent, "${file.name} is not an Anonymizer map: ${e.message}", "Import map", JOptionPane.ERROR_MESSAGE)
+            JOptionPane.showMessageDialog(parent, "File ${file.name} is not an Anonymizer map: ${e.message}", "Import map", JOptionPane.ERROR_MESSAGE)
             null
         }
     }
