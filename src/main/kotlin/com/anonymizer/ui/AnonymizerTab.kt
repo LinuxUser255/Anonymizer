@@ -1,6 +1,7 @@
 package com.anonymizer.ui
 
 import com.anonymizer.engine.AnonymizeResult
+import com.anonymizer.engine.Curl
 import com.anonymizer.engine.MappingSnapshot
 import com.anonymizer.engine.Restorer
 import com.anonymizer.engine.Settings
@@ -141,9 +142,17 @@ public class AnonymizerTab(private val host: TabHost) : JPanel(BorderLayout()) {
             add(JScrollPane(originalPane), BorderLayout.CENTER)
         }
         val copy = JButton("Copy").apply { addActionListener { shown?.result?.let { host.copy(it.text) } } }
+        val copyCurl = JButton("Copy as curl").apply {
+            toolTipText = "The anonymized request as a curl command (bash); Restore turns the LLM's version back into the real one"
+            addActionListener { copyCurl() }
+        }
+        val copyButtons = JPanel(FlowLayout(FlowLayout.RIGHT, 4, 0)).apply {
+            add(copy)
+            add(copyCurl)
+        }
         val rightTop = JPanel(BorderLayout()).apply {
             add(summaryLabel, BorderLayout.CENTER)
-            add(copy, BorderLayout.EAST)
+            add(copyButtons, BorderLayout.EAST)
         }
         val right = JPanel(BorderLayout()).apply {
             border = BorderFactory.createTitledBorder("Anonymized (blue = placeholder, yellow = check this)")
@@ -319,6 +328,22 @@ public class AnonymizerTab(private val host: TabHost) : JPanel(BorderLayout()) {
             host.copy(text)
             summaryLabel.text = "copied ${items.size} item(s) as Markdown"
         }
+    }
+
+    /**
+     * Copies the shown item's anonymized request as a curl command. Built from the anonymized text
+     * alone; only the scheme comes from the item's service (https when unknown).
+     */
+    private fun copyCurl() {
+        val item = shown ?: return
+        val result = item.result ?: return
+        val curl = Curl.fromRequest(result.text, item.service?.secure ?: true)
+        if (curl == null) {
+            summaryLabel.text = "#${item.id}: Copy as curl needs a request with a Host header"
+            return
+        }
+        host.copy(curl)
+        summaryLabel.text = "#${item.id}: copied as curl command"
     }
 
     private fun removeSelected() {

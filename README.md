@@ -57,6 +57,8 @@ parses.
    this", a value a disabled detector would have caught. Toggle detectors or add client terms
    (select text in any editor → **Add selection as client term**); the output re-renders live.
 3. **Copy**, or select several items → **Copy all as Markdown**, and paste into the LLM.
+   **Copy as curl** gives the anonymized request as a `curl` command for bash instead (the
+   anonymized counterpart of Burp's "Copy as curl command").
 4. Paste the LLM's reply into **Restore** → **Restore**. Unknown placeholders are left in place and
    listed (restore never invents a value); lenient matches are highlighted; a JWT whose claims the
    LLM edited is flagged rather than guessed. Then **Send to Repeater**.

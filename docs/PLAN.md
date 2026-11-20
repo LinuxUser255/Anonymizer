@@ -476,3 +476,14 @@ The map JSON the extension stores in `extensionData()` and writes on Export is
   from RequestRedactorX" table and the statement that no AI provider is ever contacted (criterion
   12 does not apply). Submission goes through a `New extension submission` issue on
   `PortSwigger/extension-portal`, not email; PortSwigger forks the repo and builds the JAR.
+- 2026-11-20 — **Copy as curl.** A button beside Copy on the Anonymized pane writes the shown
+  request as a bash `curl` command (`engine/Curl.kt`, a formatter over already-anonymized text; no
+  detector or restore change). Chosen over the requested "paste Burp's curl output into an editor
+  and anonymize it": that needs a bash `$'…'` parser to recover the header, cookie and body
+  structure the HTTP text already has, and plain-text detection alone would miss opaque cookie and
+  bearer values. The URL comes only from the anonymized text (absolute target or `Host` header),
+  never from the item's real service; only the scheme does. `Content-Length` and `Host` are
+  dropped (curl derives both; a pinned length is wrong after restore). Known limit: Restore is a
+  plain substitution, so an original value containing `'` or `\` lands unescaped inside `$'…'` in
+  a restored curl command — review before running it in a shell. Test: `CurlTest`, including
+  restore(curl(anonymized)) == curl(original).
